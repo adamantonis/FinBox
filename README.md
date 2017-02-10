@@ -4,7 +4,7 @@ Simple file management web application
 
 Built With
 ----------
-Nodejs, Express, Bootstrap, jQuery
+Nodejs, Express, MySQL, Bootstrap, jQuery
 
 Features
 --------
