@@ -428,77 +428,47 @@ var endpoint={
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	DownloadFile: function(file_id){
 		
-		var self=this;
+		var token=this.getStorage("AuthJWT");
+		var email=this.getStorage("AuthEmail");
+		var url=this.GetEndpointUrl("/files/"+file_id+"/contents")+"?email="+email;
 		
-		if (request)
-		{
-			request.abort();
-		}
+		var xmlhttp = new XMLHttpRequest();
 		
-		var data={
-			email: this.getStorage("AuthEmail")
-		};
-
-		request = $.ajax({
-			url: this.GetEndpointUrl("/files/"+file_id+"/contents"),
-			method: 'GET',
-			data:data
-		});
-		request.done(function (response, textStatus, jqXHR){
+		xmlhttp.open("GET", url, true);
+		xmlhttp.responseType = "arraybuffer";
+		xmlhttp.setRequestHeader("x-access-token", token);
 		
-			//var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
+		xmlhttp.onload = function(oEvent) {
 			
-			if (jqXHR.status==200)
-			{
-				//console.dir("success: "+done_msg);
-				
-				console.log(jqXHR.getAllResponseHeaders());
-				
-				//console.log(response);
-				
-				var filename = "";
-				var mimetype = jqXHR.getResponseHeader('Content-type');
-				var disposition = jqXHR.getResponseHeader('Content-Disposition');
-				if (disposition && disposition.indexOf('attachment') !== -1) {
-					var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-					var matches = filenameRegex.exec(disposition);
-					if ((matches!=null) && (matches[1])) 
-					{ 
-					    filename = matches[1].replace(/['"]/g,'');
+			var filename = "";
+			var mimetype = xmlhttp.getResponseHeader('Content-type');
+			var disposition = xmlhttp.getResponseHeader('Content-Disposition');
+			if (disposition && disposition.indexOf('attachment') !== -1) {
+				var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+				var matches = filenameRegex.exec(disposition);
+				if ((matches!=null) && (matches[1])) 
+				{ 
+					filename = matches[1].replace(/['"]/g,'');
+					
+					try 
+					{
+						var isFileSaverSupported = !!new Blob;
+						if (isFileSaverSupported)
+						{
+							var blob = new Blob([xmlhttp.response], { type: mimetype });
+							saveAs(blob, filename);
+						}	
+					} 
+					catch(e) 
+					{
 						
-						try 
-						{
-							var isFileSaverSupported = !!new Blob;
-							if (isFileSaverSupported)
-							{
-								var blob = new Blob([response], { type: mimetype });
-								saveAs(blob, filename);
-								
-								var file = new File([response], filename, {type: mimetype});
-								saveAs(file);
-							}	
-						} 
-						catch(e) 
-						{
-							
-						}
 					}
 				}
 			}
-			else
-			{
-				self.alertCustom("! Failed to download file\n\n"+done_msg);
-			}
-		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Failed to download file\n\n"+fail_msg;
-			self.alertCustom(msg);
-		});
-		request.always(function (){
-		});
-		
+		};
+
+		xmlhttp.send();
+  
 		return false;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -72,7 +72,7 @@ module.exports.fileDownload=function(app,router,connection,opts){
 								var download_path = __dirname +'/download/'+name; // +"-"+now;
 								var download_name = name;
 								
-								// c
+								// create the file
 								fs.writeFile(download_path, file_buffer, function(err) {
 								    if (err) 
 								    {
@@ -86,8 +86,6 @@ module.exports.fileDownload=function(app,router,connection,opts){
 										
 										/************************************************************************************************************************/
 										// download the file
-										res.setHeader('Content-type', mimeType);
-										res.setHeader('Content-disposition', 'attachment; filename="' + download_name+'"');
 										res.download(download_path,download_name, function(err){
 											if (err) 
 											{
