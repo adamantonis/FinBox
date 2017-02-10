@@ -6,6 +6,15 @@ Built With
 ----------
 Nodejs, Express, Bootstrap, jQuery
 
+Features
+--------
+* Register an account
+* Upload one or multiple files
+* List own files
+* Update one or multiple own files
+* Delete own files
+* Download own files
+
 Installation Steps
 ------------------
 Step 1. Download, install and configure MySQL Server as per https://www.mysql.com
