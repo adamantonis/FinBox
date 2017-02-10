@@ -1,0 +1,109 @@
+.welcomeElements 
+{
+	display:none;
+	max-width: 330px;
+	margin-top:30px;
+    margin: 0 auto;
+}
+#firstTimeLink
+{
+	font-size:0.7em;
+}
+.loggedOffElements 
+{
+	display:none;
+}
+.loggedOnElements 
+{
+	display:none;
+}
+#loggedAsContainer
+{
+	display:none;
+	text-align:center;
+	font-size:0.7em;
+	margin:12px;
+}
+#logoutLinkContainer
+{
+	display:none;
+	margin:18px 0 0 5px;
+	font-size:0.8em;
+}
+#logoutLinkContainer a
+{
+	color: #07C;
+	text-decoration:underline;
+	cursor:pointer;
+}
+.form-signin 
+{
+    max-width: 330px;
+    padding: 15px;
+    margin: 0 auto;
+	font-size:0.8em;
+}
+.form-signin h2
+{
+	font-size:2.2em;
+	text-align:center;
+}
+.form-signin h3
+{
+	font-size:1.8em;
+	text-align:center;
+	text-decoration:underline;
+}
+* {
+  -webkit-border-radius: 0 !important;
+     -moz-border-radius: 0 !important;
+          border-radius: 0 !important;
+}
+#welcomeContainer,
+#loginContainer,
+#registerContainer
+{
+	margin-top:30px;
+}
+#filesContainer
+{
+	margin-top:60px;
+}
+#filesTableCaptionTitle
+{
+	float:left;
+}
+#filesTableCaptionLink
+{
+	float:right;
+	text-decoration:underline;
+}
+.modal
+{
+	font-size:0.8em;
+}
+.modal-title
+{
+	text-align:center;
+}
+.modalBtnContainer
+{
+	text-align:center;
+}
+.modalBtnContainer button
+{
+	width:125px;
+}
+.actions
+{
+	text-decoration:underline;
+	font-size:0.8em;
+}
+.table
+{
+	font-size:0.8em;
+}
+#deleteFileModalTitle
+{
+	text-align:center;
+}
