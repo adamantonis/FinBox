@@ -4,10 +4,7 @@ Simple file management web application
 
 Built With
 ----------
-Nodejs
-Express
-Bootstrap
-jQuery
+Nodejs, Express, Bootstrap, jQuery
 
 Installation Steps
 ------------------
@@ -29,7 +26,7 @@ Step 8. Type 'npm install' to install all the server side packages required for 
 
 Step 9. Type 'bower install' to install all the front end packages required for the app to run - see finbox/bower.json
 
-Step 10. Type npm start to start FinBox app and you are good to go!
+Step 10. Type 'npm start' to start FinBox app and you are good to go!
 
 Step 11. Go to your browser and open the link eg. http://localhost:3000/, where 3000 is the port that the server is currently listening to, see finbox/finbox.js to adjust the port accordingly
 
