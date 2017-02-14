@@ -491,15 +491,15 @@ var endpoint={
 	setStorage: function(name,value){
 		if (typeof(Storage)!=="undefined") 
 		{
-			window.localStorage.setItem(name,value);
+			sessionStorage.setItem(name,value);
 		}
 	},
 	getStorage: function(name){
 		if (typeof(Storage)!=="undefined") 
 		{
-			if (window.localStorage.getItem(name))
+			if (sessionStorage.getItem(name))
 			{
-				return window.localStorage.getItem(name);
+				return sessionStorage.getItem(name);
 			}
 			else
 			{
@@ -512,17 +512,65 @@ var endpoint={
 		}
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	remStorage: function(new_token){
+	remStorage: function(){
 		if (typeof(Storage) !== "undefined") 
 		{
-			if (window.localStorage.getItem("AuthJWT"))
+			if (sessionStorage.getItem("AuthJWT"))
 			{
-				window.localStorage.removeItem("AuthJWT");
-				window.localStorage.removeItem("AuthFirstName");
-				window.localStorage.removeItem("AuthLastName");
-				window.localStorage.removeItem("AuthEmail");
+				sessionStorage.clear();
+				
+				localStorage.removeItem("AuthJWT");
+				localStorage.removeItem("AuthFirstName");
+				localStorage.removeItem("AuthLastName");
+				localStorage.removeItem("AuthEmail");
+				
+				// Ask other tabs to remove their session storage
+				localStorage.setItem('remSessionStorage', new Date());
+				localStorage.removeItem('remSessionStorage');
 			}
 		}
+	},
+	// https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
+	keepSessionStorage: function(event)
+	{
+		// IE
+		if(!event) 
+		{ 
+			event = window.event; 
+		}
+		
+		if(event.newValue)
+		{
+			// Some tab asked for the sessionStorage -> send it
+			if (event.key == 'getSessionStorage') 
+			{
+				localStorage.setItem('sessionStorage', JSON.stringify(sessionStorage));
+				localStorage.removeItem('sessionStorage');
+			} 
+			// sessionStorage is empty -> fill it
+			else if ((event.key == 'sessionStorage') && (!sessionStorage.length)) 
+			{
+				var data = JSON.parse(event.newValue);
+				for (key in data) 
+				{
+					sessionStorage.setItem(key, data[key]);
+				}
+			}
+		}
+	},
+	remSessionStorage: function(event)
+	{
+		// IE
+		if(!event) 
+		{ 
+			event = window.event; 
+		}
+
+		// Some tab asked for the sessionStorage -> send it
+		if (event.key == 'remSessionStorage') 
+		{
+			endpoint.remStorage();
+		} 
 	},
 	pageLoginView: function()
 	{

@@ -46,7 +46,9 @@
 				</div>
 			</li>
             <li>
-				<div id="logoutLinkContainer"><a href="#" id="logoutLink" title="Logout">Logout</a></div>
+				<div id="logoutLinkContainer">
+					<a href="#" id="logoutLink" title="Logout">Logout</a>
+				</div>
 			</li>
           </ul>
         </div>
@@ -224,34 +226,72 @@
 	<script src="./js/fileForm.js"></script>
 	<!------------------------------------------------------------------------------------------------------------->
     <script>
-		////////////////////////////////////////////////////////////////////////////////////////////////////////
-		$(document).ready(function() { 
+	
+		(function(){
+		
+			//console.log(sessionStorage);
+			
+			//console.log(localStorage);
+			
+			// credits to https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
+			// Modern Browsers supporting addEventListener
+			
+			if(window.addEventListener) 
+			{
+				window.addEventListener("storage",endpoint.remSessionStorage,false);
+			} 
+			// Backwards compatibility for older IE versions
+			else 
+			{
+				window.attachEvent("onstorage",endpoint.remSessionStorage);
+			}
+			
+			if(window.addEventListener) 
+			{
+				window.addEventListener("storage",endpoint.keepSessionStorage,false);
+			} 
+			// Backwards compatibility for older IE versions
+			else 
+			{
+				window.attachEvent("onstorage",endpoint.keepSessionStorage);
+			}
+
+			// Ask other tabs for session storage
+			if (!sessionStorage.length) 
+			{
+				localStorage.setItem('getSessionStorage', new Date());
+				localStorage.removeItem('getSessionStorage');
+			};
+			
 			if (typeof(Storage)!=="undefined") 
 			{
-				if (window.localStorage.getItem("AuthJWT"))
+				if (sessionStorage.getItem("AuthJWT"))
 				{		
-					var token=window.localStorage.getItem("AuthJWT");
+					var token=sessionStorage.getItem("AuthJWT");
 					if ((token!==undefined) && (token!==null) && (token!="")) 
 					{
+						//alert(1);
 						endpoint.setAjaxTokenHeader(token);
-						endpoint.GetLoggedOnUserDetails('load',window.localStorage.getItem("AuthEmail"));
+						endpoint.GetLoggedOnUserDetails('load',sessionStorage.getItem("AuthEmail"));
 					}
 					else
 					{
+						//alert(2);
 						endpoint.pageLoginView();
 					}
 				}
 				else
 				{
+					//alert(3);
 					endpoint.pageLoginView();
 				}
 			}
 			else
 			{
+				//alert(4);
 				endpoint.pageLoginView();
 			}
-			///////////////////////////////////////////////////////////////////////////////////////////////////
-		}); 
+		})();
 	</script>
 	<!------------------------------------------------------------------------------------------------------------->
   </body>
