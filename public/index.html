@@ -229,11 +229,7 @@
 	
 		(function(){
 		
-			//console.log(sessionStorage);
-			
-			//console.log(localStorage);
-			
-			// credits to https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
+			// inspired from https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
 			// Modern Browsers supporting addEventListener
 			
 			if(window.addEventListener) 
@@ -270,25 +266,21 @@
 					var token=sessionStorage.getItem("AuthJWT");
 					if ((token!==undefined) && (token!==null) && (token!="")) 
 					{
-						//alert(1);
 						endpoint.setAjaxTokenHeader(token);
 						endpoint.GetLoggedOnUserDetails('load',sessionStorage.getItem("AuthEmail"));
 					}
 					else
 					{
-						//alert(2);
 						endpoint.pageLoginView();
 					}
 				}
 				else
 				{
-					//alert(3);
 					endpoint.pageLoginView();
 				}
 			}
 			else
 			{
-				//alert(4);
 				endpoint.pageLoginView();
 			}
 		})();

@@ -530,7 +530,7 @@ var endpoint={
 			}
 		}
 	},
-	// https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
+	// inspired from https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
 	keepSessionStorage: function(event)
 	{
 		// IE
