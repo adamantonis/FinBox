@@ -1,4 +1,37 @@
-$(document).ready(function() {
+(function() {
+	// Modern Browsers supporting addEventListener
+	if(window.addEventListener) 
+	{
+		window.addEventListener("storage",endpoint.remSessionStorage,false);
+	} 
+	// Backwards compatibility for older IE versions
+	else 
+	{
+		window.attachEvent("onstorage",endpoint.remSessionStorage);
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if(window.addEventListener) 
+	{
+		window.addEventListener("storage",endpoint.keepSessionStorage,false);
+	} 
+	// Backwards compatibility for older IE versions
+	else 
+	{
+		window.attachEvent("onstorage",endpoint.keepSessionStorage);
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Ask other tabs for session storage
+	if (!sessionStorage.length) 
+	{
+		localStorage.setItem('getSessionStorage', new Date());
+		localStorage.removeItem('getSessionStorage');
+		endpoint.pageLoginView();
+	}
+	else
+	{
+		endpoint.setGlobalAjaxHeaders(); 
+		endpoint.GetLoggedOnUserDetails();
+	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	$("#logoutLink").click(function(){
 		endpoint.Logout();
@@ -21,13 +54,9 @@ $(document).ready(function() {
 	});
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	$('#uploadFileModal').on('show.bs.modal', function (event) {
-		
 		var $form = $("#uploadFileForm");
 		var $inputs = $form.find("input, select, button, textarea");
 		$inputs.val("");
-		
-		$("#fileToUploadEmail").val(endpoint.getStorage("AuthEmail"));
-		
 		var modal = $(this);
 	});
 	$('#updateFileModal').on('show.bs.modal', function (event) {
@@ -56,4 +85,4 @@ $(document).ready(function() {
 		var modal = $(this);
 	});
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-});
+})();

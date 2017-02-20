@@ -1,14 +1,15 @@
 var express 	   = require('express');
 var path 		   = require('path');
 var mysql 		   = require('mysql');
-var nJwt    	   = require('njwt');
 var secureRandom   = require('secure-random');
 var bodyParser     = require('body-parser');
 var methodOverride = require('method-override')
+var helmet         = require('helmet');
 
 var config 		   = require('./scripts/config.js');
-var encryption     = require('./scripts/encryption.js');
 var rest 		   = require("./api/REST_API.js");
+var verifyAPIRoute = require("./api/verifyAPIRoute.js");
+var headerifyAPIRoute = require("./api/headerifyAPIRoute.js");
 
 var app = express();
 
@@ -47,59 +48,21 @@ INIT_REST_API.prototype.configureExpress = function(connection) {
     var self = this;
 	
 	app.use(bodyParser.json());
-	app.use(bodyParser.urlencoded({ extended: true }));
+	app.use(bodyParser.urlencoded({ extended: false }));
 	app.use(methodOverride('_method'));
 	
-	app.set('nJWTsk',secureRandom(256,{type: 'Buffer'}));
+	app.use(helmet());
+	app.set('nJWTsk',secureRandom(512,{type: 'Buffer'}));
 	app.set('nJWTalg','HS512');
+	
 	app.set('port',process.env.PORT || 3000);
 	app.use(express.static(path.join(__dirname,'/public')));
 	app.use('/bower_components',express.static(path.join(__dirname,'/bower_components')));
 	
+	app.all('/*',headerifyAPIRoute.headerify); 
+	
     var router = express.Router();
-	
-	router.use(function(req, res, next) {
-		
-		// Other than the register and auth endpoints all other endpoints can only be accessed by authenticated users
-		if ((req.url === '/auth') || (req.url === '/users') || (req.url === '/favicon.ico')) // and the annoying favicon
-		{
-			return next();
-		}
-		
-		// verify token before getting into any root
-		var token = ((req.body.token) || (req.query.token) || (req.headers['x-access-token']));
-		if ((token) && (typeof token !== 'undefined')) 
-		{
-			token=encryption.decryptPassword(token);
-			nJwt.verify(token,app.get('nJWTsk'),app.get('nJWTalg'),function(err,verifiedJwt){     
-				if (err) 
-				{
-					//console.log("Token could not be verified at: "+Date.now());
-					
-					// remove the header for security
-					res.removeHeader('x-access-token');
-					
-					// Returns 403 if could not verify token
-					res.status(403).send("Could not verify token");				
-				} 
-				else 
-				{
-					
-					//console.log("Token verified at: "+Date.now());
-					
-					// the token has been verified, so save the verifiedJwt to the request for use in other routes
-					req.verifiedJwt = verifiedJwt;    
-					next();
-				}
-			});
-		} 
-		else // this will be the answer to all paths for now
-		{
-			// Returns 403 if user not authenticated
-			res.status(403).send("User not authenticated");	
-		}
-	});
-	
+	router.use(verifyAPIRoute.verifyToken(app,router,connection));
     app.use(router);
 	  
     var rest_router = new rest(app,router,connection);

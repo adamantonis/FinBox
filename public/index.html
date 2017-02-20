@@ -147,9 +147,8 @@
 				<input type="text" class="form-control" id="fileToUpdateName" name="fileToUpdateName" placeholder="filename.ext">
 			  </div>
 			  <div class="form-group">
-				<label for="fileToUpload">File to upload <small>(multiple)</small></label>
+				<label for="fileToUpload">File(s) to upload <small>(max 10)</small></label>
 				<input type="file" class="form-control" id="fileToUpload" name="fileToUpload" multiple>
-				<input type="hidden" class="form-control" value="" name="fileToUploadEmail" id="fileToUploadEmail">
 			  </div>
 			  <div class="modalBtnContainer">
 				<button type="submit" class="btn btn-sm  btn-primary">UPLOAD</button>
@@ -174,7 +173,6 @@
 				<label for="fileToUpdateId">File to update</label>
 				<span class="form-control" id="fileToUpdateTitle">File name was not be rendered</span>
 				<input type="hidden" class="form-control" name="fileToUpdateId" id="fileToUpdateId">
-				<input type="hidden" class="form-control" name="fileToUpdateEmail" id="fileToUpdateEmail">
 			  </div>
 			  <div class="form-group">
 				<label for="fileToUpdate">File to upload</label>
@@ -203,7 +201,6 @@
 				<label for="fileToDeleteId">File to update</label>
 				<span class="form-control" id="fileToDeleteTitle">File name was not be rendered</span>
 				<input type="hidden" class="form-control" name="fileToDeleteId" id="fileToDeleteId">
-				<input type="hidden" class="form-control" name="fileToDeleteEmail" id="fileToDeleteEmail">
 			  </div>
 			  <div class="modalBtnContainer">
 				<button type="submit" class="btn btn-sm  btn-primary">DELETE</button>
@@ -215,76 +212,33 @@
 	  </div>
 	</div>
 	<!------------------------------------------------------------------------------------------------------------->
+	<div class="modal fade" id="alertCustomModal" tabindex="-1" role="dialog" aria-labelledby="alertCustomModalTitle">
+	  <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		  <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="alertCustomModalTitle">SYSTEM NOTIFICATION</h4>
+		  </div>
+		  <div class="modal-body">
+			<div id="alertCustomMessage"></div>
+			<hr />
+			<div class="modalBtnContainer">
+				<button type="button" class="btn btn-sm  btn-primary" data-dismiss="modal">OK</button>
+			 </div>
+		  </div>
+		</div>
+	  </div>
+	</div>
+	<!------------------------------------------------------------------------------------------------------------->
 	<script src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script src="bower_components/jquery-form/jquery.form.js"></script>
 	<script src="bower_components/file-saver/FileSaver.min.js"></script>
     <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 	<script src="./js/localStorageEmulation.js"></script>
 	<script src="./js/endpoint.js"></script>
-	<script src="./js/scripts.js"></script>
 	<script src="./js/authForm.js"></script>
 	<script src="./js/fileForm.js"></script>
-	<!------------------------------------------------------------------------------------------------------------->
-    <script>
-	
-		(function(){
-		
-			// inspired from https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
-			// Modern Browsers supporting addEventListener
-			
-			if(window.addEventListener) 
-			{
-				window.addEventListener("storage",endpoint.remSessionStorage,false);
-			} 
-			// Backwards compatibility for older IE versions
-			else 
-			{
-				window.attachEvent("onstorage",endpoint.remSessionStorage);
-			}
-			
-			if(window.addEventListener) 
-			{
-				window.addEventListener("storage",endpoint.keepSessionStorage,false);
-			} 
-			// Backwards compatibility for older IE versions
-			else 
-			{
-				window.attachEvent("onstorage",endpoint.keepSessionStorage);
-			}
-
-			// Ask other tabs for session storage
-			if (!sessionStorage.length) 
-			{
-				localStorage.setItem('getSessionStorage', new Date());
-				localStorage.removeItem('getSessionStorage');
-			};
-			
-			if (typeof(Storage)!=="undefined") 
-			{
-				if (sessionStorage.getItem("AuthJWT"))
-				{		
-					var token=sessionStorage.getItem("AuthJWT");
-					if ((token!==undefined) && (token!==null) && (token!="")) 
-					{
-						endpoint.setAjaxTokenHeader(token);
-						endpoint.GetLoggedOnUserDetails('load',sessionStorage.getItem("AuthEmail"));
-					}
-					else
-					{
-						endpoint.pageLoginView();
-					}
-				}
-				else
-				{
-					endpoint.pageLoginView();
-				}
-			}
-			else
-			{
-				endpoint.pageLoginView();
-			}
-		})();
-	</script>
+	<script src="./js/scripts.js"></script>
 	<!------------------------------------------------------------------------------------------------------------->
   </body>
 </html>

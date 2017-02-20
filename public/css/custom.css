@@ -103,6 +103,10 @@
 {
 	font-size:0.8em;
 }
+.table thead tr th
+{
+	background-color:#EEEEEE;
+}
 #deleteFileModalTitle
 {
 	text-align:center;

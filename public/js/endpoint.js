@@ -2,7 +2,7 @@ var request;
 
 var endpoint={
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	Register: function(form){
+	Register: function(form) {
 		
 		var self=this;
 		
@@ -27,10 +27,13 @@ var endpoint={
 			url: self.GetEndpointUrl($form.attr("action")),
 			contentType: 'application/json',
 			method: 'POST',
+			dataType: 'json',
 			data: JSON.stringify(user_details)
 		});
-		request.done(function (response, textStatus, jqXHR){
-		
+		request.done(function (response, textStatus, jqXHR) {
+			
+			var done_msg=self.GetDoneMsg(response, textStatus, jqXHR);
+			
 			// Returns 201 if user created successfully
 			if (jqXHR.status==201)
 			{
@@ -38,40 +41,30 @@ var endpoint={
 				$(".welcomeElements").show();
 				$(".loggedOnElements").hide();
 				$(".loggedOffElements").hide();
-				
-				console.dir("success: Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText);
 			}
 			else
 			{
 				self.pageRegisterView();
-				
-				var msg="! Attention\n\nThere was a problem in the registration process:\n\n"+response.toString()+"\n\nCode: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText+"\n\nPlease refresh the page and try again\n\nIf the error persists please contact support at finbox@support.com";
-				
-				self.alertCustom(msg);
+				self.alertCustom(done_msg);
 			}
 			
 			self.remStorage(); 
-			self.setAjaxTokenHeader("");
+			self.setGlobalAjaxHeaders();
 		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			
+		request.fail(function (jqXHR, textStatus, errorThrown) {
 			self.pageRegisterView();
 			self.remStorage(); 
-			self.setAjaxTokenHeader("");
-
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Registration failed\n\n"+fail_msg;
-			self.alertCustom(msg);
+			self.setGlobalAjaxHeaders();
+			self.ProcessFail(jqXHR, textStatus, errorThrown);
 		});
-		request.always(function (){
+		request.always(function () {
 			$inputs.prop("disabled", false);
 		});
 		
 		return false;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	Login: function(form){
+	Login: function(form) {
 		
 		var self=this;
 		
@@ -93,68 +86,41 @@ var endpoint={
 		request = $.ajax({
 			url: self.GetEndpointUrl($form.attr("action")),
 			contentType: 'application/json',
+			dataType: 'json',
 			method: 'POST',
 			data: JSON.stringify(user_details)
 		});
-		request.done(function (response, textStatus, jqXHR){
-
-			var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
+		request.done(function (response, textStatus, jqXHR) {
+			
+			var done_msg=self.GetDoneMsg(response, textStatus, jqXHR);
 			
 			// Returns 204 if authorized
 			if (jqXHR.status==204)
 			{
-				var new_token=jqXHR.getResponseHeader('x-access-token');
-				if ((new_token!==undefined) && (new_token!==null) && (new_token!="")) 
+				var validToken=self.tokenActions(jqXHR,done_msg);
+				if (validToken)
 				{
-					$(".welcomeElements").hide();
-					$(".loggedOnElements").show();
-					$(".loggedOffElements").hide();
-					
-					self.setStorage("AuthJWT",new_token);
-					self.setAjaxTokenHeader(new_token); 
-					self.GetLoggedOnUserDetails('login',user_details.email);
-					
-					console.dir("success: "+done_msg);
-				}
-				else
-				{
-					self.pageLoginView();
-					self.remStorage(); 
-					self.setAjaxTokenHeader(""); 
-					
-					var msg="! Attention\n\nThe required authentication information was not retrieved from the server so we did not log you in for security purposes\n\nPlease refresh the page and try again\n\nIf the error persists please contact support at finbox@support.com\n\nDetails\n\n"+done_msg;
-					self.alertCustom(msg)
+					self.GetLoggedOnUserDetails();
 				}
 			}
 			else
 			{
-				self.pageLoginView();
-				self.remStorage(); 
-				self.setAjaxTokenHeader("");
-				
-				var msg="! Attention\n\nAn unexpected status was retrieved from the server, so we did not log you in for security purposes\n\nPlease refresh the page and try again\n\nIf the error persists please contact support at finbox@support.com for further instructions\n\nDetails\n\n"+done_msg;
-				self.alertCustom(msg)
+				self.FailActions();
+				self.alertCustom(done_msg)
 			}
 		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-		
-			self.pageLoginView();
-			self.remStorage(); 
-			self.setAjaxTokenHeader("");
-			
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Logging in failed\n\n"+fail_msg;
-			self.alertCustom(msg);
+		request.fail(function (jqXHR, textStatus, errorThrown) {
+			self.FailActions();
+			self.ProcessFail(jqXHR, textStatus, errorThrown);
 		});
-		request.always(function (){
+		request.always(function () {
 			$inputs.prop("disabled", false);
 		});
 		
 		return false;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	Logout: function(){
+	Logout: function() {
 		
 		var self=this;
 		
@@ -165,34 +131,28 @@ var endpoint={
 		
 		request = $.ajax({
 			url: self.GetEndpointUrl("/logout"),
+			dataType: 'json',
 			method: 'POST'
 		});
-		request.done(function (response, textStatus, jqXHR){
+		request.done(function (response, textStatus, jqXHR) {
+			
+			var done_msg=self.GetDoneMsg(response, textStatus, jqXHR);
+			
 			// Returns 204 if logged out successfully
-			if (jqXHR.status==204)
+			if (jqXHR.status!=204)
 			{
-				console.dir("success: "+jqXHR.status+", "+jqXHR.statusText+", "+jqXHR.responseText);
-			}
-			else
-			{
-				var msg="! Attention\n\nThere was a problem logging you out\n\n"+response.toString()+"\n\nCode: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-				self.alertCustom(msg);
+				self.alertCustom(done_msg);
 			}
 		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Logging out failed\n\n"+fail_msg;
-			self.alertCustom(msg);
+		request.fail(function (jqXHR, textStatus, errorThrown) {
+			self.ProcessFail(jqXHR, textStatus, errorThrown);
 		});
-		request.always(function (){
-			self.pageLoginView();
-			self.remStorage(); 
-			self.setAjaxTokenHeader("");
+		request.always(function () {
+			self.FailActions();
 		});
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	GetLoggedOnUserDetails: function(when,AuthEmail){
+	GetLoggedOnUserDetails: function() {
 		
 		var self=this;
 		
@@ -204,67 +164,46 @@ var endpoint={
 		request = $.ajax({
 			url: this.GetEndpointUrl("/me"),
 			dataType: 'json',
-			method: 'GET',
-			data:{
-				email: AuthEmail
-			}
-		});
-		request.done(function (response, textStatus, jqXHR){
-		
-			var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
+			method: 'GET'
 			
-			if (response)
+		});
+		request.done(function (response, textStatus, jqXHR) {
+		
+			var done_msg=self.GetDoneDataMsg(response, textStatus, jqXHR);
+			
+			if (jqXHR.status==200)
 			{
-				if (jqXHR.status==200)
+				var validToken=self.tokenActions(jqXHR,done_msg);
+				if (validToken)
 				{
-					self.setStorage("AuthFirstName",response.firstName);
-					self.setStorage("AuthLastName",response.lastName);
-					self.setStorage("AuthEmail",response.email);
-					
-					self.GetFileLists(response.email);
+					self.GetFileLists();
 					
 					$("#loggedAsFullName").html(response.firstName+" "+response.lastName);
-				    $("#loggedAsEmail").html(response.email);
-	
+					$("#loggedAsEmail").html(response.email);
+
 					$(".welcomeElements").hide();
 					$(".loggedOnElements").show();
 					$("#loggedOffElements").hide();
 					$("#loginContainer").hide();
 					$("#loggedAsContainer").show();
 					$("#logoutLinkContainer").show();
-
-					console.dir("success: "+done_msg);
-				}
-				else
-				{
-					self.pageLoginView();
-					self.remStorage(); 
-					self.setAjaxTokenHeader("");
-					
-					self.alertCustom("! Failed to get logged on user details\n\n"+response.toString()+"\n\n"+done_msg);
 				}
 			}
 			else
 			{
-				self.alertCustom("! Failed to get logged on user details\n\n"+response.toString()+"\n\n"+done_msg);
+				self.FailActions();
+				self.alertCustom(done_msg);
 			}
 		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			
-			self.pageLoginView();
-			self.remStorage(); 
-			self.setAjaxTokenHeader("");
-			
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Failed to get logged on user details\n\n"+fail_msg;
-			self.alertCustom(msg);
+		request.fail(function (jqXHR, textStatus, errorThrown) {
+			self.FailActions();
+			self.ProcessFail(jqXHR, textStatus, errorThrown);
 		});
-		request.always(function (){
+		request.always(function () {
 		});
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	GetFileLists: function(AuthEmail){
+	GetFileLists: function() {
 		
 		var self=this;
 		
@@ -276,24 +215,18 @@ var endpoint={
 		request = $.ajax({
 			url: this.GetEndpointUrl("/files"),
 			dataType: 'json',
-			method: 'GET',
-			data:{
-				email: AuthEmail
-			}
+			method: 'GET'
 		});
-		request.done(function (response, textStatus, jqXHR){
+		request.done(function (response, textStatus, jqXHR) {
 		
-			var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
+			var done_msg=self.GetDoneDataMsg(response, textStatus, jqXHR);
 			
-			if (response)
+			if (jqXHR.status==200)
 			{
-				if (jqXHR.status==200)
+				var validToken=self.tokenActions(jqXHR,done_msg);
+				if (validToken)
 				{
-					//console.dir("success: "+done_msg);
-					
-					console.dir("Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText);
-					
-					$("#filesTable tbody tr").html("");
+					$("#filesTable tbody").html("");
 					
 					var actions="", tr="", tds="";
 					for (var i=0; i<response.length; i++)
@@ -316,27 +249,21 @@ var endpoint={
 						$("#filesTable tbody").append(tr);
 					}
 				}
-				else
-				{
-					self.alertCustom("! Failed to get logged on user details\n\n"+response.toString()+"\n\n"+done_msg);
-				}
 			}
 			else
 			{
-				self.alertCustom("! Failed to get logged on user details\n\n"+response.toString()+"\n\n"+done_msg);
+				self.alertCustom(done_msg);
 			}
 		});
-		request.fail(function (jqXHR, textStatus, errorThrown){
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Failed to get logged on user details\n\n"+fail_msg;
-			self.alertCustom(msg);
+		request.fail(function (jqXHR, textStatus, errorThrown) {
+		    self.FailActions();
+			self.ProcessFail(jqXHR, textStatus, errorThrown);
 		});
-		request.always(function (){
+		request.always(function () {
 		});
 	},
-	GetFileDetails: function(file_id,call_back)
-	{
+	GetFileDetails: function(file_id,call_back) {
+		
 		var self=this;
 		
 		if (request)
@@ -347,21 +274,17 @@ var endpoint={
 		request = $.ajax({
 			url: this.GetEndpointUrl("/files/"+file_id),
 			dataType: 'json',
-			method: 'GET',
-			data:{
-				email: this.getStorage("AuthEmail")
-			}
+			method: 'GET'
 		});
-		request.done(function (response, textStatus, jqXHR){
+		request.done(function (response, textStatus, jqXHR) {
 		
-			var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
+			var done_msg=self.GetDoneDataMsg(response, textStatus, jqXHR);
 			
-			if (response)
+			if (jqXHR.status==200)
 			{
-				if (jqXHR.status==200)
+				var validToken=self.tokenActions(jqXHR,done_msg);
+				if (validToken)
 				{
-					console.dir("success: "+done_msg);
-					
 					var file_name		     =response.name;
 					var file_creationDate    =response.creationDate;
 					var file_modificationDate=response.modificationDate;
@@ -370,27 +293,21 @@ var endpoint={
 					
 					call_back(file_name,file_creationDate,file_modificationDate,file_mimeType,file_fileSize);
 				}
-				else
-				{
-					self.alertCustom("! Failed to get file details\n\n"+response.toString()+"\n\n"+done_msg);
-				}
 			}
 			else
 			{
-				self.alertCustom("! Failed to get file details\n\n"+response.toString()+"\n\n"+done_msg);
+				self.alertCustom(done_msg);
 			}
 		});
 		request.fail(function (jqXHR, textStatus, errorThrown){
-			var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-			console.dir("fail: "+fail_msg);
-			var msg="! Failed to get file details\n\n"+fail_msg;
-			self.alertCustom(msg);
+			self.FailActions();
+			self.ProcessFail(jqXHR, textStatus, errorThrown);
 		});
-		request.always(function (){
+		request.always(function () {
 		});
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	UpdateFile: function(file_id){
+	UpdateFile: function(file_id) {
 		
 		var $form = $("#updateFileForm");
 		var $inputs = $form.find("input, select, button, textarea");
@@ -401,14 +318,13 @@ var endpoint={
 		});
 
 		$("#fileToUpdateId").val(file_id);
-		$("#fileToUpdateEmail").val(this.getStorage("AuthEmail"));
 	
 		$('#updateFileModal').modal('show');
 		
 		return false;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	DeleteFile: function(file_id){
+	DeleteFile: function(file_id) {
 		
 		var $form = $("#deleteFileForm");
 		var $inputs = $form.find("input, select, button, textarea");
@@ -419,49 +335,53 @@ var endpoint={
 		});
 		
 		$("#fileToDeleteId").val(file_id);
-		$("#fileToDeleteEmail").val(this.getStorage("AuthEmail"));
 		
 		$('#deleteFileModal').modal('show');
 
 		return false;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	DownloadFile: function(file_id){
+	DownloadFile: function(file_id) {
 		
-		var token=this.getStorage("AuthJWT");
-		var email=this.getStorage("AuthEmail");
-		var url=this.GetEndpointUrl("/files/"+file_id+"/contents")+"?email="+email;
+		var self=this;
+		
+		var url=this.GetEndpointUrl("/files/"+file_id+"/contents");
 		
 		var xmlhttp = new XMLHttpRequest();
-		
 		xmlhttp.open("GET", url, true);
 		xmlhttp.responseType = "arraybuffer";
-		xmlhttp.setRequestHeader("x-access-token", token);
+		xmlhttp.setRequestHeader('Authorization','Bearer '+this.getStorage('finbox_token'));
 		
 		xmlhttp.onload = function(oEvent) {
 			
-			var filename = "";
-			var mimetype = xmlhttp.getResponseHeader('Content-type');
-			var disposition = xmlhttp.getResponseHeader('Content-Disposition');
-			if (disposition && disposition.indexOf('attachment') !== -1) {
-				var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-				var matches = filenameRegex.exec(disposition);
-				if ((matches!=null) && (matches[1])) 
-				{ 
-					filename = matches[1].replace(/['"]/g,'');
-					
-					try 
-					{
-						var isFileSaverSupported = !!new Blob;
-						if (isFileSaverSupported)
-						{
-							var blob = new Blob([xmlhttp.response], { type: mimetype });
-							saveAs(blob, filename);
-						}	
-					} 
-					catch(e) 
-					{
+			var done_msg=self.GetDoneDataMsg(xmlhttp.response, xmlhttp.statusText, xmlhttp);
+			
+			var validToken=self.tokenActions(xmlhttp,done_msg);
+			if (validToken)
+			{
+				var filename = "";
+				var mimetype = xmlhttp.getResponseHeader('Content-type');
+				var disposition = xmlhttp.getResponseHeader('Content-Disposition');
+				if ((disposition) && (disposition.indexOf('attachment') !== -1)) {
+					var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+					var matches = filenameRegex.exec(disposition);
+					if ((matches!=null) && (matches[1])) 
+					{ 
+						filename = matches[1].replace(/['"]/g,'');
 						
+						try 
+						{
+							var isFileSaverSupported = !!new Blob;
+							if (isFileSaverSupported)
+							{
+								var blob = new Blob([xmlhttp.response], { type: mimetype });
+								saveAs(blob, filename);
+							}	
+						} 
+						catch(e) 
+						{
+							
+						}
 					}
 				}
 			}
@@ -472,7 +392,7 @@ var endpoint={
 		return false;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	GetEndpointUrl: function(action){
+	GetEndpointUrl: function(action) {
 		var url = window.location.href;
 		var arr = url.split("/");
 		var result = arr[0] + "//" + arr[2];
@@ -480,21 +400,61 @@ var endpoint={
 		return api_url;
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	setAjaxTokenHeader: function (token){
+	setGlobalAjaxHeaders: function () {
 		$.ajaxSetup({
 			headers: {
-			  'x-access-token': token
+			  'Authorization': 'Bearer '+this.getStorage('finbox_token')
 			}
 		});
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	setStorage: function(name,value){
+	tokenActions: function (jqXHR,done_msg) {
+
+		var token=jqXHR.getResponseHeader('Authorization');
+		if ((token===undefined) || (token===null) || ($.trim(token).length===0)) 
+		{
+			this.FailActions();
+			this.alertCustom(done_msg);
+		}
+		else
+		{
+			if (token.indexOf(' ')!=-1)
+			{
+				token=token.split(' ')[1];
+				if ($.trim(token).length!==0)
+				{
+					$(".welcomeElements").hide();
+					$(".loggedOnElements").show();
+					$(".loggedOffElements").hide();
+
+					this.setStorage("finbox_token",token);
+					this.setGlobalAjaxHeaders(); 
+					
+					return true;
+				}
+				else
+				{
+					this.FailActions();
+					this.alertCustom(done_msg);
+				}
+			}
+			else
+			{
+				this.FailActions();
+				this.alertCustom(done_msg);
+			}
+		}
+		
+		return false;
+	},
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	setStorage: function(name,value) {
 		if (typeof(Storage)!=="undefined") 
 		{
 			sessionStorage.setItem(name,value);
 		}
 	},
-	getStorage: function(name){
+	getStorage: function(name) {
 		if (typeof(Storage)!=="undefined") 
 		{
 			if (sessionStorage.getItem(name))
@@ -512,27 +472,24 @@ var endpoint={
 		}
 	},
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	remStorage: function(){
+	remStorage: function() {
 		if (typeof(Storage) !== "undefined") 
 		{
-			if (sessionStorage.getItem("AuthJWT"))
+			if (sessionStorage.getItem("finbox_token"))
 			{
+				// clear all session data
 				sessionStorage.clear();
 				
-				localStorage.removeItem("AuthJWT");
-				localStorage.removeItem("AuthFirstName");
-				localStorage.removeItem("AuthLastName");
-				localStorage.removeItem("AuthEmail");
-				
-				// Ask other tabs to remove their session storage
+				// Ask other tabs to remove their session storage indirectly - this will fire an event on rest tabs
 				localStorage.setItem('remSessionStorage', new Date());
 				localStorage.removeItem('remSessionStorage');
+				
+				// remove any temporal localStorage used in this session just in case
+				localStorage.removeItem("finbox_token");
 			}
 		}
 	},
-	// inspired from https://blog.guya.net/2015/06/12/sharing-sessionstorage-between-tabs-for-secure-multi-tab-authentication/
-	keepSessionStorage: function(event)
-	{
+	keepSessionStorage: function(event) {
 		// IE
 		if(!event) 
 		{ 
@@ -541,13 +498,13 @@ var endpoint={
 		
 		if(event.newValue)
 		{
-			// Some tab asked for the sessionStorage -> send it
+			// Some tab asked for the sessionStorage so send it
 			if (event.key == 'getSessionStorage') 
 			{
 				localStorage.setItem('sessionStorage', JSON.stringify(sessionStorage));
 				localStorage.removeItem('sessionStorage');
 			} 
-			// sessionStorage is empty -> fill it
+			// sessionStorage is empty so fill it
 			else if ((event.key == 'sessionStorage') && (!sessionStorage.length)) 
 			{
 				var data = JSON.parse(event.newValue);
@@ -558,22 +515,20 @@ var endpoint={
 			}
 		}
 	},
-	remSessionStorage: function(event)
-	{
+	remSessionStorage: function(event) {
 		// IE
 		if(!event) 
 		{ 
 			event = window.event; 
 		}
 
-		// Some tab asked for the sessionStorage -> send it
+		// Some tab requested removal of sessionStorage so remove it
 		if (event.key == 'remSessionStorage') 
 		{
 			endpoint.remStorage();
 		} 
 	},
-	pageLoginView: function()
-	{
+	pageLoginView: function() {
 		$(".welcomeElements").hide();
 		$(".loggedOffElements").hide();
 		$(".loggedOnElements").hide();
@@ -581,8 +536,7 @@ var endpoint={
 		$("#loggedAsContainer").hide();
 		$("#logoutLinkContainer").hide();
 	},
-	pageRegisterView: function()
-	{
+	pageRegisterView: function() {
 		$(".welcomeElements").hide();
 		$(".loggedOffElements").hide();
 		$(".loggedOnElements").hide();
@@ -590,9 +544,36 @@ var endpoint={
 		$("#loggedAsContainer").hide();
 		$("#logoutLinkContainer").hide();
 	},
-	alertCustom: function(msg)
-	{
-		alert(msg);
+	FailActions:function() {
+		this.pageLoginView();
+		this.remStorage(); 
+		this.setGlobalAjaxHeaders();
+	},
+	ProcessFail: function(jqXHR,textStatus,errorThrown) {
+		var fail_msg=this.GetFailMsg(jqXHR,textStatus,errorThrown);
+		this.alertCustom(fail_msg);
+	},
+	GetDoneMsg: function(response, textStatus, jqXHR) {
+		var message=((response!==undefined)&&(response!==null))?response.message:"";
+		var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+((response!="")?("\n\nReason: "+message):"");
+		return done_msg;
+	},
+	GetDoneDataMsg: function(response, textStatus, jqXHR) {
+		var done_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText;
+		return done_msg;
+	},
+	GetFailMsg: function(jqXHR, textStatus, errorThrown) {
+		var response=((jqXHR!==undefined)&&(jqXHR!==null))?JSON.parse(jqXHR.responseText):"";
+		var fail_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+((response!="")?("\n\nReason: "+response.message):"");
+		return fail_msg;
+	},
+	alertCustom: function(msg) {
+		msg=msg.split('\n\n').map(function(x) {
+			return ("<p>"+x+"</p>");
+		}).join('');
+		$("#alertCustomMessage").css('text-align','center');
+		$("#alertCustomMessage").html(msg);
+		$('#alertCustomModal').modal('show');
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 };

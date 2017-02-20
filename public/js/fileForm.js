@@ -35,40 +35,36 @@ $(document).ready(function(){
 
 		$(this).ajaxSubmit({
 			url:   endpoint_url,
-			//type:  "POST",
+			type:  "POST",
             error: function(jqXHR, textStatus, errorThrown){
-				var error_msg="Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText;
-				console.dir("fail: "+error_msg);
-				var msg="! File "+form_context+" failed\n\n"+error_msg;
-				endpoint.alertCustom(msg);
+				endpoint.ProcessFail(jqXHR, textStatus, errorThrown);
             },
             success: function(response, textStatus, jqXHR){
 				
-				var msg=form_context+": Code: "+jqXHR.status+"\n\nDescription: "+jqXHR.statusText+"\n\nReason: "+jqXHR.responseText
+				var done_msg=endpoint.GetDoneMsg(response, textStatus, jqXHR);
 				
-				var AuthEmail=endpoint.getStorage("AuthEmail");
-				if ((jqXHR.status==201) && (form_context=="upload"))
+				var validToken=endpoint.tokenActions(jqXHR,done_msg);
+				if (validToken)
 				{
-					console.dir("successful "+msg);
-					endpoint.GetFileLists(AuthEmail);
-					$('#uploadFileModal').modal('hide');
-				}
-				else if ((jqXHR.status==204) && (form_context=="update"))
-				{
-					console.dir("successful "+msg);
-					endpoint.GetFileLists(AuthEmail);
-					$('#updateFileModal').modal('hide');
-				}
-				else if ((jqXHR.status==204) && (form_context=="delete"))
-				{
-					console.dir("successful "+msg);
-					endpoint.GetFileLists(AuthEmail);
-					$('#deleteFileModal').modal('hide');
-				}
-				else
-				{
-					console.dir("fail: "+msg);
-					alertCustom(msg);
+					if ((jqXHR.status==201) && (form_context=="upload"))
+					{
+						endpoint.GetFileLists();
+						$('#uploadFileModal').modal('hide');
+					}
+					else if ((jqXHR.status==204) && (form_context=="update"))
+					{
+						endpoint.GetFileLists();
+						$('#updateFileModal').modal('hide');
+					}
+					else if ((jqXHR.status==204) && (form_context=="delete"))
+					{
+						endpoint.GetFileLists();
+						$('#deleteFileModal').modal('hide');
+					}
+					else
+					{
+						endpoint.alertCustom(done_msg);
+					}
 				}
             }
 		});

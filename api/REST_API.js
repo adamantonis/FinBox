@@ -4,8 +4,9 @@ var mysql 		 = require('mysql');
 var nJwt     	 = require('njwt');
 var secureRandom = require('secure-random');
 var multer  	 = require('multer');
-var encryption   = require('../scripts/encryption.js');
 var reqBody		 = multer();
+var encryption   = require('../scripts/encryption.js');
+
 
 var userLoginEndpoint      = require('./endpoints/userLogin.js');
 var userRegisterEndpoint   = require('./endpoints/userRegister.js');
