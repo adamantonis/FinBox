@@ -60,9 +60,7 @@ var verification={
 	verifyToken: function(app,router,connection,opts) {
 	
 		opts=opts || (opts = {});
-		
-		var self=this;
-		
+
 		return function(req,res,next) {
 			
 			// Other than the register and auth endpoints all other endpoints can only be accessed by authenticated users
@@ -75,75 +73,27 @@ var verification={
 			var authorization=req.headers.authorization;
 			if ((!authorization) || (typeof authorization === 'undefined'))
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 
 			// check if the authorization header contains a space which sort of means that the bearer xsrfToken is maybe present
 			// I check this so that the split in the next step does not fall over
 			if (authorization.indexOf(' ')==-1)
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 
 			// gets the bearer token to check if it has been provided
 			var xsrfToken=authorization.split(' ')[1];
 			if ((!xsrfToken) || (typeof xsrfToken === 'undefined'))
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 
 			// checks if the length of the xsrfToken is invalid
 			if (xsrfToken.trim().length===0)
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 			
 			// decrypt xsrfToken
@@ -155,38 +105,14 @@ var verification={
 			}
 			catch(e)
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 			
 			// get the actual token from the cookie
 			var token=verification.getTokenFromCookie(req,res);
 			if ((!token) || (typeof token === 'undefined') || (token === ''))
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 			
 			// decrypt the actual token
@@ -196,38 +122,14 @@ var verification={
 			}
 			catch(e)
 			{
-				//return self.exitVerification(res,req);
-				
-				// set cookie to nothing
-				self.setTokenToCookie(req,res,"");
-				
-				// remove Authorization header to remove token
-				res.removeHeader('Authorization');	
-				
-				// Returns 403 if user not authenticated
-				return res.status(403).json({
-					success: false,
-					message: 'User not authenticated'
-				});
+				return this.exitVerification(res,req);
 			}
 			
 			// verify the actual token before getting into important api roots
 			nJwt.verify(token,app.get('nJWTsk'),app.get('nJWTalg'),function(err,verifiedJwt){     
 				if (err) 
 				{
-					//return self.exitVerification(res,req);
-				
-					// set cookie to nothing
-					self.setTokenToCookie(req,res,"");
-					
-					// remove Authorization header to remove token
-					res.removeHeader('Authorization');	
-					
-					// Returns 403 if user not authenticated
-					return res.status(403).json({
-						success: false,
-						message: 'User not authenticated'
-					});
+					return this.exitVerification(res,req);
 				}
 				
 				// decrypt the xsrfToken random uuid in the token
@@ -238,38 +140,14 @@ var verification={
 				}
 				catch(e)
 				{
-					//return self.exitVerification(res,req);
-				
-					// set cookie to nothing
-					self.setTokenToCookie(req,res,"");
-					
-					// remove Authorization header to remove token
-					res.removeHeader('Authorization');	
-					
-					// Returns 403 if user not authenticated
-					return res.status(403).json({
-						success: false,
-						message: 'User not authenticated'
-					});
+					return this.exitVerification(res,req);
 				}
 				
 				// compare the xsrfToken in the token to xsrfToken coming from the request
 				// if there is mismatch then exit
 				if (xsrfTokenInToken!=xsrfToken)
 				{
-					//return self.exitVerification(res,req);
-				
-					// set cookie to nothing
-					self.setTokenToCookie(req,res,"");
-					
-					// remove Authorization header to remove token
-					res.removeHeader('Authorization');	
-					
-					// Returns 403 if user not authenticated
-					return res.status(403).json({
-						success: false,
-						message: 'User not authenticated'
-					});
+					return this.exitVerification(res,req);
 				}
 				
 				var user_id=verifiedJwt.body.sub;
@@ -279,38 +157,14 @@ var verification={
 				}
 				catch(e)
 				{
-					//return self.exitVerification(res,req);
-				
-					// set cookie to nothing
-					self.setTokenToCookie(req,res,"");
-					
-					// remove Authorization header to remove token
-					res.removeHeader('Authorization');	
-					
-					// Returns 403 if user not authenticated
-					return res.status(403).json({
-						success: false,
-						message: 'User not authenticated'
-					});
+					return this.exitVerification(res,req);
 				}
 				
 				// it is possible that the user_id has been forged, particularly is not a positive integer number greater than 0, or it is some kind of command pattern etc
 				var result=validationHelpers.validUserId(user_id);
 				if (!result.valid)
 				{
-					//return self.exitVerification(res,req);
-				
-					// set cookie to nothing
-					self.setTokenToCookie(req,res,"");
-					
-					// remove Authorization header to remove token
-					res.removeHeader('Authorization');	
-					
-					// Returns 403 if user not authenticated
-					return res.status(403).json({
-						success: false,
-						message: 'User not authenticated'
-					});
+					return this.exitVerification(res,req);
 				}
 				
 				// the token has been verified, so now we need to verify the user_id
@@ -320,36 +174,12 @@ var verification={
 				connection.query(query,function(err,rows) {
 					if(err) 
 					{
-						//return self.exitVerification(res,req);
-				
-						// set cookie to nothing
-						self.setTokenToCookie(req,res,"");
-						
-						// remove Authorization header to remove token
-						res.removeHeader('Authorization');	
-						
-						// Returns 403 if user not authenticated
-						return res.status(403).json({
-							success: false,
-							message: 'User not authenticated'
-						});
+						return this.exitVerification(res,req);
 					}
 
 					if (rows.length==0)
 					{
-						//return self.exitVerification(res,req);
-				
-						// set cookie to nothing
-						self.setTokenToCookie(req,res,"");
-						
-						// remove Authorization header to remove token
-						res.removeHeader('Authorization');	
-						
-						// Returns 403 if user not authenticated
-						return res.status(403).json({
-							success: false,
-							message: 'User not authenticated'
-						});
+						return this.exitVerification(res,req);
 					}
 					
 					// Passed verification
